@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# files to ignore
+./corpus/dolly-parton
+
 # Distribution / packaging
 .Python
 build/
