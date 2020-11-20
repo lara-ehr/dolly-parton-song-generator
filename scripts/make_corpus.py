@@ -23,6 +23,9 @@ EXCLUDE_WORDS = ['Dolly Parton', 'Frank Daycus', 'Rachel Dennison', \
 
 TOKENIZER = Tokenizer()
 
+# dict_replace = {"\\": "", "\.": "", "-": "", '"': "", "\?": "\'", "\s+": " ", "test": "hello"}
+dict_replace = {"-": " ", "\.": "", "\?": "\'", "\s+": " "}
+
 def filter_lyrics(line):
     '''
     Marks lines containing stage directions like "[chorus]" or
@@ -67,21 +70,20 @@ def clean_lyrics(raw):
 if __name__ == "__main__":
 
     all_lyrics = []
-    for file in FILES[:15]:
+    for file in FILES:
         with open(f'{CORPUS_DIRECTORY}/{file}') as f:
             raw = [line.strip() for line in f.read().split('\n') if filter_lyrics(line) and len(line) > 0]
             raw = ' '.join(raw)
+            for key, value in dict_replace.items():
+                sub = re.sub(key, value, raw)
+                raw = sub
             raw = re.sub(r'\\', '', raw)
-            raw = re.sub(r'\.', '', raw)
-            raw = re.sub(r'-', '', raw)
-            raw = re.sub(r'"', '', raw)
-            raw = re.sub('\?', '\'', raw)
             raw = re.sub('\s+', ' ', raw)
             lyrics = clean_lyrics(raw)
             capped = cap_repetition(lyrics)
             all_lyrics = all_lyrics + capped
 
-    with open(f'{OUTPUT_DIRECTORY}/test_all_lyrics.txt', 'w') as f:
+    with open(f'{OUTPUT_DIRECTORY}/all_lyrics.txt', 'w') as f:
         f.write(' '.join(all_lyrics))
 
     seq_len = 61
@@ -104,7 +106,7 @@ if __name__ == "__main__":
 
     for key, value in name_data_dict.items():
         new = pd.DataFrame(value)
-        new.to_csv(f'{OUTPUT_DIRECTORY}/test_{key}.csv', index=False)
+        new.to_csv(f'{OUTPUT_DIRECTORY}/{key}.csv', index=False)
 
-    with open(f'{META_DIRECTORY}/test_tokenizer.pickle', 'wb') as handle:
+    with open(f'{META_DIRECTORY}/tokenizer.pickle', 'wb') as handle:
         pickle.dump(TOKENIZER, handle, protocol=pickle.HIGHEST_PROTOCOL)
