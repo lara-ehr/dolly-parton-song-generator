@@ -8,9 +8,9 @@ from spacy.lang.en import English
 
 from tensorflow.keras.preprocessing.text import Tokenizer
 
-CORPUS_DIRECTORY = '../corpus/dolly-parton'
-OUTPUT_DIRECTORY = '../corpus'
-META_DIRECTORY = '../metadata/'
+CORPUS_DIRECTORY = os.path.abspath('../corpus/dolly-parton')
+OUTPUT_DIRECTORY = os.path.abspath('../corpus')
+META_DIRECTORY = os.path.abspath('../metadata/')
 
 FILES = [file for file in os.listdir(CORPUS_DIRECTORY) if file.startswith('dolly-parton_')]
 
@@ -67,7 +67,7 @@ def clean_lyrics(raw):
 if __name__ == "__main__":
 
     all_lyrics = []
-    for file in FILES:
+    for file in FILES[:15]:
         with open(f'{CORPUS_DIRECTORY}/{file}') as f:
             raw = [line.strip() for line in f.read().split('\n') if filter_lyrics(line) and len(line) > 0]
             raw = ' '.join(raw)
@@ -81,32 +81,30 @@ if __name__ == "__main__":
             capped = cap_repetition(lyrics)
             all_lyrics = all_lyrics + capped
 
-    with open(f'{OUTPUT_DIRECTORY}/all_lyrics.txt', 'w') as f:
+    with open(f'{OUTPUT_DIRECTORY}/test_all_lyrics.txt', 'w') as f:
         f.write(' '.join(all_lyrics))
 
     seq_len = 61
-    dolly_lines_x = []
-    dolly_lines_y = []
+    dolly_lines = []
 
-    for i in range(seq_len, len(all_lyrics)):
-        seq = all_lyrics[i:seq_len+i]
+    for i in range(len(all_lyrics)):
+        seq = all_lyrics[i-seq_len:i]
         if len(seq) == seq_len:
-            dolly_lines_y.append(seq[-1])
-            dolly_lines_x.append(seq[:-1])
+            line = ' '.join(seq)
+            dolly_lines.append(line)
 
     TOKENIZER.fit_on_texts(all_lyrics)
 
-    sequences_x = TOKENIZER.texts_to_sequences(dolly_lines_x)
-    sequences_y = TOKENIZER.texts_to_sequences(dolly_lines_y)
+    sequences = TOKENIZER.texts_to_sequences(dolly_lines)
 
-    NAMES = ['dolly_lines_x', 'dolly_lines_y', 'sequences_x', 'sequences_y']
-    data = [dolly_lines_x, dolly_lines_y, sequences_x, sequences_y]
+    NAMES = ['dolly_lines', 'sequences']
+    data = [dolly_lines, sequences]
 
     name_data_dict = dict(zip(NAMES, data))
 
     for key, value in name_data_dict.items():
         new = pd.DataFrame(value)
-        new.to_csv(f'{OUTPUT_DIRECTORY}/{key}.csv', index=False)
+        new.to_csv(f'{OUTPUT_DIRECTORY}/test_{key}.csv', index=False)
 
-    with open(f'{META_DIRECTORY}tokenizer.pickle', 'wb') as handle:
+    with open(f'{META_DIRECTORY}/test_tokenizer.pickle', 'wb') as handle:
         pickle.dump(TOKENIZER, handle, protocol=pickle.HIGHEST_PROTOCOL)
